@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Chainsight</string>
+    <string name="title_activity_add_eth">AddEthActivity</string>
+    <string name="title_activity_balance_eth">BalanceEthActivity</string>
+</resources>
