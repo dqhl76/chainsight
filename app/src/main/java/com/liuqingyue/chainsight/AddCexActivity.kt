@@ -1,7 +1,9 @@
 package com.liuqingyue.chainsight
 
+
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -9,6 +11,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.ClickableText
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
@@ -18,15 +21,17 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.liuqingyue.chainsight.ui.theme.ChainsightTheme
 
-/*
-* Add a new ethereum account page
-* */
 
-class AddEthActivity : ComponentActivity() {
+class AddCexActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
@@ -39,7 +44,7 @@ class AddEthActivity : ComponentActivity() {
                 ) {
                     Column {
                         Row(modifier = Modifier.fillMaxWidth()) {
-                            ShowTopBar("Add Ethereum Account") // top bar part
+                            ShowTopBar("Add Binance Account") // top bar part
                             Row(
                                 horizontalArrangement = Arrangement.End, // close button at the right place
                                 modifier = Modifier.fillMaxWidth()
@@ -54,7 +59,7 @@ class AddEthActivity : ComponentActivity() {
                                 }
                             }
                         }
-                        ShowAddNewAccount(this@AddEthActivity)
+                        ShowAddNewCexAccount(this@AddCexActivity)
 
                     }
                 }
@@ -63,62 +68,27 @@ class AddEthActivity : ComponentActivity() {
     }
 }
 
-// get balance will jump into the detail page
-fun getBalance(address: String, name: String, context: AddEthActivity) {
-    val intent = Intent(context, BalanceEthActivity::class.java)
-    intent.putExtra("address", address)
-    intent.putExtra("name", name)
-    intent.putExtra("FirstTime", true)
-    ContextCompat.startActivity(context, intent, null)
-}
-
-
-// address regex to check if a ERC20 address is valid
-val addressRegex = Regex("^0x[a-fA-F0-9]{40}\$")
 
 @Composable
-fun ShowAddNewAccount(context: AddEthActivity) {
+fun ShowAddNewCexAccount(context: AddCexActivity) {
 
     // address and name need to remember and pass into detailed page
-    var address by remember {
+    var name by remember {
         mutableStateOf("")
     }
-    var name by remember {
+    var apiKey by remember {
+        mutableStateOf("")
+    }
+    var apiSecret by remember {
         mutableStateOf("")
     }
 
     Column(modifier = Modifier.padding(start = 15.dp, end = 15.dp)) {
         Text(
-            text = "Please input your Ethereum address and the account name. Address started from 0x. We will support more network in the future.",
+            text = "Please input your Binance API. See the instruction on Binance official website about how to get your API key and secret. https://www.binance.com/en/binance-api",
             modifier = Modifier.padding(4.dp, 6.dp, 4.dp, 8.dp),
             style = MaterialTheme.typography.body1,
             color = Color.DarkGray
-        )
-        TextField(
-            value = address,
-            onValueChange = { address = it },
-            label = { Text("Address", color = colorResource(id = R.color.black)) },
-            //        leadingIcon = @Composable {
-            //            Image(imageVector = Icons.Filled.Search, contentDescription = "Search Icon")
-            //        },
-            trailingIcon = @Composable {
-                Image(imageVector = Icons.Filled.Clear, contentDescription = "Clear Search Icon",
-                    modifier = Modifier.clickable {
-                        address = ""
-                    })
-
-            },
-            colors = TextFieldDefaults.textFieldColors(
-                focusedIndicatorColor = colorResource(id = R.color.primary),
-                unfocusedIndicatorColor = colorResource(id = R.color.primary),
-                errorIndicatorColor = colorResource(id = R.color.primary),
-            ),
-            shape = RoundedCornerShape(8.dp, 8.dp, 8.dp, 8.dp),
-            placeholder = { Text("Enter your ethereum address") },
-            isError = addressRegex.matches(address).not(),
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 10.dp, bottom = 10.dp)
         )
 
         TextField(
@@ -142,7 +112,57 @@ fun ShowAddNewAccount(context: AddEthActivity) {
             ),
             shape = RoundedCornerShape(8.dp, 8.dp, 8.dp, 8.dp),
             placeholder = { Text("Enter your account name") },
-            isError = addressRegex.matches(address).not(),
+            modifier = Modifier
+                .fillMaxWidth()
+        )
+
+        TextField(
+            value = apiKey,
+            onValueChange = { apiKey = it },
+            label = { Text("API Key", color = colorResource(id = R.color.black)) },
+            //        leadingIcon = @Composable {
+            //            Image(imageVector = Icons.Filled.Search, contentDescription = "Search Icon")
+            //        },
+            trailingIcon = @Composable {
+                Image(imageVector = Icons.Filled.Clear, contentDescription = "Clear Search Icon",
+                    modifier = Modifier.clickable {
+                        apiKey = ""
+                    })
+
+            },
+            colors = TextFieldDefaults.textFieldColors(
+                focusedIndicatorColor = colorResource(id = R.color.primary),
+                unfocusedIndicatorColor = colorResource(id = R.color.primary),
+                errorIndicatorColor = colorResource(id = R.color.primary),
+            ),
+            shape = RoundedCornerShape(8.dp, 8.dp, 8.dp, 8.dp),
+            placeholder = { Text("Enter your Binance API Key") },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 10.dp, bottom = 10.dp)
+        )
+
+        TextField(
+            value = apiSecret,
+            onValueChange = { apiSecret = it },
+            label = { Text("API Secret", color = colorResource(id = R.color.black)) },
+            //        leadingIcon = @Composable {
+            //            Image(imageVector = Icons.Filled.Search, contentDescription = "Search Icon")
+            //        },
+            trailingIcon = @Composable {
+                Image(imageVector = Icons.Filled.Clear, contentDescription = "Clear Search Icon",
+                    modifier = Modifier.clickable {
+                        apiSecret = ""
+                    })
+
+            },
+            colors = TextFieldDefaults.textFieldColors(
+                focusedIndicatorColor = colorResource(id = R.color.primary),
+                unfocusedIndicatorColor = colorResource(id = R.color.primary),
+                errorIndicatorColor = colorResource(id = R.color.primary),
+            ),
+            shape = RoundedCornerShape(8.dp, 8.dp, 8.dp, 8.dp),
+            placeholder = { Text("Enter your account name") },
             modifier = Modifier
                 .fillMaxWidth()
         )
@@ -150,10 +170,15 @@ fun ShowAddNewAccount(context: AddEthActivity) {
 
         Button(
             onClick = {
-                if (addressRegex.matches(address)) {
-                    getBalance(address, name, context)
+                if (apiKey == "" || apiSecret == "") {
+                    Toast.makeText(context, "Please input your API Key and API Secret", Toast.LENGTH_SHORT).show()
                 } else {
-                    Toast.makeText(context, "Invalid address", Toast.LENGTH_SHORT).show()
+                    val intent = Intent(context,BalanceBinanceActivity::class.java )
+                    intent.putExtra("apiKey", apiKey)
+                    intent.putExtra("apiSecret", apiSecret)
+                    intent.putExtra("FirstTime", true)
+                    intent.putExtra("name", name)
+                    ContextCompat.startActivity(context, intent, null)
                 }
             },
             modifier = Modifier
@@ -167,16 +192,24 @@ fun ShowAddNewAccount(context: AddEthActivity) {
             Text("Finish", color = Color.Black, style = MaterialTheme.typography.button)
         }
         SelectionContainer() {
-
             Text(
-                text = "If you are testing this app and don't have a address, you can use this address as example: 0xA47F68826Abe8d3A20EE1B1458F3156e6C7b5277",
-                modifier = Modifier.padding(4.dp, 16.dp, 4.dp, 8.dp),
+                text = "If you want to test this app, please get a test API from https://testnet.binance.vision/. I also provide a test API, you can use it test this function.",
+                modifier = Modifier.padding(4.dp, 16.dp, 4.dp, 0.dp),
                 style = MaterialTheme.typography.body1,
                 color = Color.DarkGray
             )
         }
+        SelectionContainer() {
+            Text(
+                text = "Test API Key: 7nhvMub7uAW2CwCDE8B45nBZOUkzCBCxnrN8cPvR3K2nFIsT6oFhkHVXDUOwziiG \nTest API Secret: uZT7BeJWF34WMTopgIgYYqq7pfZ8tzcRVfvyimxXrkhR31F41bChfkqcxbIFW4pW",
+                modifier = Modifier.padding(4.dp, 12.dp, 4.dp, 8.dp),
+                style = MaterialTheme.typography.body1,
+                color = Color.Gray
+            )
+        }
+
+
     }
 }
-
 
 

@@ -85,4 +85,13 @@ dependencies {
 
     // runtime-livedata
     implementation "androidx.compose.runtime:runtime-livedata:$compose_version"
+
+    implementation "commons-codec:commons-codec:1.11"
+
+    // binance
+    implementation 'io.github.binance:binance-connector-java:1.10.0'
+
+    // pull to refresh
+    implementation 'io.github.shenzhen2017:compose-refreshlayout:1.0.0'
+
 }

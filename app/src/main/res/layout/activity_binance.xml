@@ -5,12 +5,12 @@
     android:orientation="vertical">
 
     <androidx.compose.ui.platform.ComposeView
-        android:id="@+id/topBar"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
-    <androidx.compose.ui.platform.ComposeView
-        android:id="@+id/accounts"
+        android:id="@+id/composeBinance1"
         android:layout_width="match_parent"
         android:layout_height="wrap_content" />
 
+    <androidx.compose.ui.platform.ComposeView
+        android:id="@+id/composeBinance2"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
 </LinearLayout>
