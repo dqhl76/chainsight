@@ -5,6 +5,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.view.animation.AccelerateDecelerateInterpolator
+import android.widget.ImageButton
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Canvas
@@ -14,9 +15,13 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Card
 import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.material.Icon
 import androidx.compose.material.Surface
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
@@ -30,6 +35,7 @@ import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.LiveData
@@ -43,6 +49,7 @@ import de.charlex.compose.FloatingActionButtonItem
 import de.charlex.compose.SubSpeedDialFloatingActionButtons
 import de.charlex.compose.rememberSpeedDialFloatingActionButtonState
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -69,6 +76,7 @@ class MainActivity : ComponentActivity() {
 
         // use a observer model to update the balance for view model when database changed
         val accountsLiveData = db.getObserverAll()
+
 
         setContent{
             ShowPullAndRefresh(context = this@MainActivity, accountsLiveData = accountsLiveData)
@@ -120,6 +128,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun ShowPullAndRefresh(context: MainActivity, accountsLiveData: LiveData<List<Account>>) {
     var refreshing by remember { mutableStateOf(false) }
+    var deleteView by remember { mutableStateOf(false) }
     LaunchedEffect(refreshing) {
         if (refreshing){
             delay(3000)
@@ -138,8 +147,8 @@ fun ShowPullAndRefresh(context: MainActivity, accountsLiveData: LiveData<List<Ac
         BallRefreshHeader(state = it)
     }) {
         Column() {
-            ShowTopBar(title = "Board")
-            ShowSurface(context = context, accountsLive = accountsLiveData)
+            ShowMainTopBar(title = "Board",onDeleteViewChange = { deleteView = it },deleteView = deleteView)
+            ShowSurface(context = context, accountsLive = accountsLiveData,deleteView)
 
         }
     }
@@ -206,10 +215,10 @@ fun BallRefreshHeader(state: SwipeRefreshState) {
 
 // Accounts part contain many account
 @Composable
-fun ShowAccounts(accounts: List<Account>, context:MainActivity) {
+fun ShowAccounts(accounts: List<Account>, context:MainActivity, deleteView: Boolean) {
     Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
         accounts.forEach{ account ->
-            ShowAccount(account,context)
+            ShowAccount(account,context,deleteView)
         }
     }
 
@@ -218,7 +227,7 @@ fun ShowAccounts(accounts: List<Account>, context:MainActivity) {
 // It contained by ShowAccounts()
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
-fun ShowAccount(account: Account,context:MainActivity) {
+fun ShowAccount(account: Account,context:MainActivity, deleteView: Boolean) {
     var pic = ""
     if(account.type == "Cex"){
         pic = account.key.split("@@")[0]
@@ -276,29 +285,87 @@ fun ShowAccount(account: Account,context:MainActivity) {
                 androidx.compose.material.Text(text = account.name, fontSize = androidx.compose.material.MaterialTheme.typography.h5.fontSize, modifier = Modifier.padding(5.dp))
                 androidx.compose.material.Text(text = keyShort,fontSize = androidx.compose.material.MaterialTheme.typography.body2.fontSize, modifier = Modifier.padding(5.dp))
             }
-            Row(horizontalArrangement = Arrangement.End, modifier = Modifier.fillMaxSize()) {
-                androidx.compose.material.Text(text = String.format("$%.2f",account.balance),fontSize = androidx.compose.material.MaterialTheme.typography.h5.fontSize, modifier = Modifier.padding(5.dp))
+            Column() {
+                Row(horizontalArrangement = Arrangement.End, modifier = Modifier.fillMaxWidth()) {
+                    androidx.compose.material.Text(text = String.format("$%.2f",account.balance),fontSize = androidx.compose.material.MaterialTheme.typography.h5.fontSize)
+                }
 
+                Row(horizontalArrangement = Arrangement.End, modifier = Modifier.fillMaxWidth()) {
+                if(deleteView){
+                        androidx.compose.material.IconButton(onClick = {
+                            val thread = Thread(Runnable {
+                                val db = AppDatabase.getDatabase(context = context).getAccountDao()
+                                db.delete(db.findByName(account.name))
+                            })
+                            thread.start()
+                        }) {
+                            Icon(
+                                imageVector = Icons.Filled.Clear,
+                                contentDescription = "delete",
+                                tint = androidx.compose.material.MaterialTheme.colors.onSurface
+                            )
+                        }
+                    }
+                }
             }
 
         }
     }
 }
 
+
+// Top Bar
+@Composable
+fun ShowMainTopBar(title:String,onDeleteViewChange:(Boolean)->Unit,deleteView:Boolean) {
+    Row() {
+        androidx.compose.material.Text(text = title,
+            modifier = Modifier
+                .padding(top = 15.dp, bottom = 15.dp, start = 10.dp),
+            fontSize = androidx.compose.material.MaterialTheme.typography.h5.fontSize,
+        )
+        // a button to delete the account
+
+       Row(modifier = Modifier.fillMaxWidth(),horizontalArrangement = Arrangement.End) {
+           androidx.compose.material.IconButton(onClick = {
+               if (deleteView) {
+                   onDeleteViewChange(false)
+               } else {
+                   onDeleteViewChange(true)
+               }
+           }) {
+               if(deleteView) {
+                   Icon(
+                       imageVector = Icons.Filled.Delete,
+                       contentDescription = "delete",
+                       tint = androidx.compose.material.MaterialTheme.colors.onSurface
+                   )
+               }else{
+                     Icon(
+                          imageVector = Icons.Outlined.Delete,
+                          contentDescription = "delete",
+                          tint = androidx.compose.material.MaterialTheme.colors.onSurface
+                     )
+               }
+           }
+       }
+    }
+}
+
+
 // Top Bar
 @Composable
 fun ShowTopBar(title:String) {
     androidx.compose.material.Text(text = title,
-    modifier = Modifier
-        .padding(top = 15.dp, bottom = 15.dp, start = 10.dp),
-    fontSize = androidx.compose.material.MaterialTheme.typography.h5.fontSize,
+        modifier = Modifier
+            .padding(top = 15.dp, bottom = 15.dp, start = 10.dp),
+        fontSize = androidx.compose.material.MaterialTheme.typography.h5.fontSize,
     )
 }
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ShowSurface(context: MainActivity,accountsLive: LiveData<List<Account>>){
+fun ShowSurface(context: MainActivity,accountsLive: LiveData<List<Account>>,deleteView:Boolean){
     val accounts = accountsLive.observeAsState(arrayListOf())
     val fabState = rememberSpeedDialFloatingActionButtonState()
     // For a floating action button
@@ -353,7 +420,7 @@ fun ShowSurface(context: MainActivity,accountsLive: LiveData<List<Account>>){
             color = androidx.compose.material3.MaterialTheme.colorScheme.background
         ) {
             if(accounts!=null)
-                ShowAccounts(accounts = accounts.value, context = context)
+                ShowAccounts(accounts = accounts.value, context = context,deleteView = deleteView)
         }
     }
 }
