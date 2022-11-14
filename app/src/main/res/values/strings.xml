@@ -4,4 +4,7 @@
     <string name="title_activity_balance_eth">BalanceEthActivity</string>
     <string name="title_activity_add_cex">AddCexActivity</string>
     <string name="title_activity_balance_binance">BalanceBinanceActivity</string>
+    <string name="title_activity_add_manual">AddManualActivity</string>
+    <string name="title_activity_balance_manually">BalanceManuallyActivity</string>
+    <string name="title_activity_add_token_manually">AddTokenManually</string>
 </resources>

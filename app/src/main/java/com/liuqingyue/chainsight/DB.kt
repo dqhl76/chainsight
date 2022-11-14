@@ -3,7 +3,6 @@ package com.liuqingyue.chainsight
 import android.content.Context
 import androidx.lifecycle.LiveData
 import androidx.room.*
-import kotlinx.coroutines.flow.Flow
 
 @Entity
 data class Account(
@@ -14,6 +13,35 @@ data class Account(
     @ColumnInfo(name = "balance") val balance: Double,
     @ColumnInfo(name = "last_update") val lastUpdate: String,
 )
+
+@Entity
+data class ManuallyAccount(
+    @PrimaryKey val uid: String,
+    @ColumnInfo(name = "contract") val contract: String,
+    @ColumnInfo(name = "amount") val amount: Double,
+    @ColumnInfo(name = "account") val account: String,
+    @ColumnInfo(name = "symbol") val symbol: String,
+    @ColumnInfo(name = "price") val price: Double,
+    @ColumnInfo(name = "change24h") val change24h: Double,
+)
+
+@Dao
+interface ManuallyAccountDao {
+    @Query("SELECT * FROM ManuallyAccount")
+    fun getAll(): List<ManuallyAccount>
+
+    @Query("SELECT * FROM ManuallyAccount WHERE account IN (:account)")
+    fun loadByAccountId(account: String): LiveData<List<ManuallyAccount>>
+
+    @Query("SELECT * FROM ManuallyAccount WHERE account IN (:account)")
+    fun loadByAccountIdWithoutLive(account: String): List<ManuallyAccount>
+
+    @Update
+    fun update(manuallyAccount: ManuallyAccount)
+
+    @Insert
+    fun insert(token: ManuallyAccount)
+}
 
 @Dao
 interface AccountDao {
@@ -59,4 +87,26 @@ abstract class AppDatabase : RoomDatabase() {
 
     }
     abstract fun getAccountDao(): AccountDao
+}
+
+@Database(entities = [ManuallyAccount::class], version = 1, exportSchema = false)
+abstract class AppDatabase2: RoomDatabase() {
+    companion object{
+        @Volatile
+        private var INSTANCE: AppDatabase2? = null
+
+        fun getDatabase(context: Context): AppDatabase2 {
+            return INSTANCE ?: synchronized(this) {
+                val instance = Room.databaseBuilder(
+                    context.applicationContext,
+                    AppDatabase2::class.java,
+                    "manually_account_database"
+                ).allowMainThreadQueries().build()
+                INSTANCE = instance
+                instance
+            }
+        }
+
+    }
+    abstract fun getManuallyAccountDao(): ManuallyAccountDao
 }

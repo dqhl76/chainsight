@@ -2,6 +2,7 @@ package com.liuqingyue.chainsight
 
 import android.content.Context
 import android.util.Log
+import coingecko.CoinGeckoClient
 import com.binance.connector.client.impl.SpotClientImpl
 import com.google.gson.Gson
 import com.liuqing.chainsight.BinanceAccountData
@@ -10,6 +11,7 @@ import retrofit2.Callback
 import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import java.time.Instant
 import java.util.*
 
 fun updateEth(context: MainActivity){
@@ -149,6 +151,26 @@ fun updateBinance(context: MainActivity){
             }
             db.update(Account(account.uid, account.type, account.name, account.key, balance = total, Date().toString()))
 
+        }
+    }
+}
+
+suspend fun updateManu(context: MainActivity){
+    val db = AppDatabase.getDatabase(context = context).getAccountDao()
+    val accounts = db.getAll()
+    val db2 = AppDatabase2.getDatabase(context=context).getManuallyAccountDao()
+    for(account in accounts) {
+        if (account.type == "Man") {
+            val tokens = db2.loadByAccountIdWithoutLive(account.key)
+            val coinGecko = CoinGeckoClient()
+            var total = 0.0
+            for(token in tokens){
+                val info = coinGecko.getCoinInfoByContractAddress("ethereum",token.contract)
+                val price = info.marketData?.currentPrice?.get("usd")
+                total += price?.times(token.amount) ?: 0.0
+            }
+            Log.e("total",total.toString())
+            db.update(Account(uid=account.uid, type = account.type,name=account.name, key = account.key, balance = total, lastUpdate = Instant.now().toString()))
         }
     }
 }

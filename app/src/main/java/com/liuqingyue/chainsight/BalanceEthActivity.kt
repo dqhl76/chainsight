@@ -77,6 +77,9 @@ class BalanceViewModel: ViewModel(){
     fun balanceAdd(delta: Double){
         balance.value += delta
     }
+    fun balanceSet(x: Double){
+        balance.value = x
+    }
 }
 
 
@@ -244,7 +247,6 @@ fun TokenListShow(tokens: ArrayList<AddressBalanceData.Data.TokenList>) {
         tokens.forEach{ token ->
             TokenShow(token,false)
         }
-
 
     }
 

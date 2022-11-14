@@ -94,4 +94,8 @@ dependencies {
     // pull to refresh
     implementation 'io.github.shenzhen2017:compose-refreshlayout:1.0.0'
 
+    // CoinGecko connector
+    implementation("io.ktor:ktor-client-okhttp:2.1.3")
+    implementation("io.ktor:ktor-client-android:2.1.3")
+    implementation("org.drewcarlson:coingecko:1.0.0-beta02")
 }

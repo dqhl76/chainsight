@@ -21,6 +21,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -38,6 +39,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.LifecycleCoroutineScope
 import androidx.lifecycle.LiveData
 import coil.compose.rememberImagePainter
 import coil.transform.RoundedCornersTransformation
@@ -48,8 +50,10 @@ import de.charlex.compose.BottomAppBarSpeedDialFloatingActionButton
 import de.charlex.compose.FloatingActionButtonItem
 import de.charlex.compose.SubSpeedDialFloatingActionButtons
 import de.charlex.compose.rememberSpeedDialFloatingActionButtonState
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.launch
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -137,6 +141,9 @@ fun ShowPullAndRefresh(context: MainActivity, accountsLiveData: LiveData<List<Ac
             }
             val thread2 = Thread{
                 updateEth(context)
+            }
+            GlobalScope.launch{
+                updateManu(context)
             }
             thread2.start()
             thread.start()
@@ -233,6 +240,8 @@ fun ShowAccount(account: Account,context:MainActivity, deleteView: Boolean) {
         pic = account.key.split("@@")[0]
     }else if(account.type == "Eth"){
         pic = account.key
+    }else if(account.type == "Man"){
+        pic = account.key
     }
     Card(
         modifier = Modifier
@@ -254,6 +263,11 @@ fun ShowAccount(account: Account,context:MainActivity, deleteView: Boolean) {
                 val intent = Intent(context, BalanceBinanceActivity::class.java)
                 intent.putExtra("apiKey",account.key.split("@@")[0])
                 intent.putExtra("apiSecret",account.key.split("@@")[1])
+                intent.putExtra("name",account.name)
+                intent.putExtra("FirstTime",false)
+                context.startActivity(intent)
+            }else if(account.type == "Man"){
+                val intent = Intent(context, BalanceManuallyActivity::class.java)
                 intent.putExtra("name",account.name)
                 intent.putExtra("FirstTime",false)
                 context.startActivity(intent)
@@ -405,6 +419,15 @@ fun ShowSurface(context: MainActivity,accountsLive: LiveData<List<Account>>,dele
                         onFabItemClicked = {
                             Log.d("FAB", "ShowNewButton: ")
                             val intent = Intent(context, AddCexActivity::class.java)
+                            context.startActivity(intent)
+                        },
+                    ),
+                    FloatingActionButtonItem(
+                        icon = Icons.Filled.Edit,
+                        label = "Manual",
+                        onFabItemClicked = {
+                            Log.d("FAB", "ShowNewButton: ")
+                            val intent = Intent(context, AddManualActivity::class.java)
                             context.startActivity(intent)
                         },
                     )

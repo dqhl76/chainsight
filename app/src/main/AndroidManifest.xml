@@ -17,6 +17,33 @@
         android:theme="@style/Theme.Chainsight"
         tools:targetApi="31">
         <activity
+            android:name=".AddTokenManually"
+            android:exported="false"
+            android:label="@string/title_activity_add_token_manually"
+            android:theme="@style/Theme.Chainsight">
+            <meta-data
+                android:name="android.app.lib_name"
+                android:value="" />
+        </activity>
+        <activity
+            android:name=".BalanceManuallyActivity"
+            android:exported="false"
+            android:label="@string/title_activity_balance_manually"
+            android:theme="@style/Theme.Chainsight">
+            <meta-data
+                android:name="android.app.lib_name"
+                android:value="" />
+        </activity>
+        <activity
+            android:name=".AddManualActivity"
+            android:exported="false"
+            android:label="@string/title_activity_add_manual"
+            android:theme="@style/Theme.Chainsight">
+            <meta-data
+                android:name="android.app.lib_name"
+                android:value="" />
+        </activity>
+        <activity
             android:name=".BalanceBinanceActivity"
             android:exported="false"
             android:label="@string/title_activity_balance_binance"
