@@ -162,7 +162,7 @@ fun ShowAddNewCexAccount(context: AddCexActivity) {
                 errorIndicatorColor = colorResource(id = R.color.primary),
             ),
             shape = RoundedCornerShape(8.dp, 8.dp, 8.dp, 8.dp),
-            placeholder = { Text("Enter your account name") },
+            placeholder = { Text("Enter your API Secret") },
             modifier = Modifier
                 .fillMaxWidth()
         )

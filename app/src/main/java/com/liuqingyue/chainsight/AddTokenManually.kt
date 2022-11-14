@@ -106,7 +106,7 @@ fun ShowAddNewToken(context: AddTokenManually,account: String) {
                 errorIndicatorColor = colorResource(id = R.color.primary),
             ),
             shape = RoundedCornerShape(8.dp, 8.dp, 8.dp, 8.dp),
-            placeholder = { Text("Enter your ethereum address") },
+            placeholder = { Text("Enter token name") },
             isError = addressRegex.matches(contract).not(),
             modifier = Modifier
                 .fillMaxWidth()
@@ -132,7 +132,7 @@ fun ShowAddNewToken(context: AddTokenManually,account: String) {
                 errorIndicatorColor = colorResource(id = R.color.primary),
             ),
             shape = RoundedCornerShape(8.dp, 8.dp, 8.dp, 8.dp),
-            placeholder = { Text("Enter your ethereum address") },
+            placeholder = { Text("Enter ethereum contract address") },
             isError = addressRegex.matches(contract).not(),
             modifier = Modifier
                 .fillMaxWidth()
@@ -159,7 +159,7 @@ fun ShowAddNewToken(context: AddTokenManually,account: String) {
                 errorIndicatorColor = colorResource(id = R.color.primary),
             ),
             shape = RoundedCornerShape(8.dp, 8.dp, 8.dp, 8.dp),
-            placeholder = { Text("Enter your account name") },
+            placeholder = { Text("Enter token amount") },
             modifier = Modifier
                 .fillMaxWidth()
         )
