@@ -5,7 +5,6 @@ import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.view.animation.AccelerateDecelerateInterpolator
-import android.widget.ImageButton
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Canvas
@@ -34,16 +33,12 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.LifecycleCoroutineScope
 import androidx.lifecycle.LiveData
 import coil.compose.rememberImagePainter
 import coil.transform.RoundedCornersTransformation
-import com.zj.refreshlayout.RefreshHeaderState
 import com.zj.refreshlayout.SwipeRefreshLayout
 import com.zj.refreshlayout.SwipeRefreshState
 import de.charlex.compose.BottomAppBarSpeedDialFloatingActionButton
@@ -51,14 +46,15 @@ import de.charlex.compose.FloatingActionButtonItem
 import de.charlex.compose.SubSpeedDialFloatingActionButtons
 import de.charlex.compose.rememberSpeedDialFloatingActionButtonState
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import java.time.LocalDate
 
 
 /* Why I import material3 and material2 in the same file?
@@ -84,7 +80,6 @@ class MainActivity : ComponentActivity() {
 
         setContent{
             ShowPullAndRefresh(context = this@MainActivity, accountsLiveData = accountsLiveData)
-
         }
 
         // To get eth price and eth change24h, it will be used in the BalanceEthActivity
@@ -129,36 +124,54 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+fun updatePortfolio(res1: Unit, res2:Unit, res3: Unit, context: MainActivity){
+    Log.d("updatePortfolio", "updatePortfolio")
+    val db = AppDatabase.getDatabase(context = context).getAccountDao()
+    val accounts = db.getAll()
+    var totalBalance = 0.0
+    for (i in accounts){
+        totalBalance += i.balance
+    }
+    Log.d(LocalDate.now().toString(), totalBalance.toString())
+    val dao = AppDatabase3.getDatabase(context = context).getPerformanceDao()
+    if(dao.loadByTime(LocalDate.now().toString()) == null) {
+        dao.insert(Performance(LocalDate.now().toString(), totalBalance))
+    }else{
+        dao.update(Performance(LocalDate.now().toString(), totalBalance))
+    }
+}
+
 @Composable
 fun ShowPullAndRefresh(context: MainActivity, accountsLiveData: LiveData<List<Account>>) {
     var refreshing by remember { mutableStateOf(false) }
     var deleteView by remember { mutableStateOf(false) }
     LaunchedEffect(refreshing) {
         if (refreshing){
+            GlobalScope.launch {
+                val cex = async { updateBinance(context) }
+                val eth = async { updateEth(context) }
+                val man = async { updateManu(context) }
+                updatePortfolio(cex.await(),eth.await(),man.await(),context)
+            }
             delay(3000)
-            val thread = Thread{
-                updateBinance(context)
-            }
-            val thread2 = Thread{
-                updateEth(context)
-            }
-            GlobalScope.launch{
-                updateManu(context)
-            }
-            thread2.start()
-            thread.start()
             refreshing = false
         }
     }
     SwipeRefreshLayout(isRefreshing = refreshing, onRefresh = { refreshing = true },indicator = {
         BallRefreshHeader(state = it)
     }) {
-        Column() {
+        Column {
             ShowMainTopBar(title = "Board",onDeleteViewChange = { deleteView = it },deleteView = deleteView)
+            ShowPerformance()
             ShowSurface(context = context, accountsLive = accountsLiveData,deleteView)
 
         }
     }
+}
+
+@Composable
+fun ShowPerformance(){
+
 }
 
 

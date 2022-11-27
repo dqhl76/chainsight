@@ -19,6 +19,7 @@ fun updateEth(context: MainActivity){
     val accounts = db.getAll()
     val sharePreference = context.getSharedPreferences("ETH",Context.MODE_PRIVATE)
     val ethPrice = sharePreference.getString("price","1500")
+    var ethTotal = 0.0
     for(account in accounts){
         if(account.type == "Eth"){
 
@@ -30,7 +31,7 @@ fun updateEth(context: MainActivity){
                val address = account.key
 
               var balance = 0.0
-               api.getEth(chain = "ETH", address=address)
+              api.getEth(chain = "ETH", address=address)
                    .enqueue(object : Callback<AddressEthData> {
                        override fun onResponse(
                            call: Call<AddressEthData>,
@@ -40,6 +41,7 @@ fun updateEth(context: MainActivity){
                                balance += ethPrice!!.toDouble() * (itResponse.body()?.data?.get(0)?.balance?.toDouble() ?: 0.0)
                                db.update(Account(account.uid, account.type, account.name, account.key, balance = balance, Date().toString()))
                                Log.e("update1",balance.toString())
+                               ethTotal = balance
                            }
 
                        }
@@ -62,7 +64,7 @@ fun updateEth(context: MainActivity){
                                     }
                                     db.update(Account(account.uid, account.type, account.name, account.key, balance = balance, Date().toString()))
                                     Log.e("update2",balance.toString())
-
+                                    ethTotal = balance
                                 } }
 
                             }
@@ -70,9 +72,6 @@ fun updateEth(context: MainActivity){
                       override fun onFailure(call: Call<AddressBalanceData>, t: Throwable) {
                           TODO("Not yet implemented")
                       }
-
-
-
                   })
         }
     }
@@ -81,7 +80,6 @@ fun updateEth(context: MainActivity){
 fun updateBinance(context: MainActivity){
     val db = AppDatabase.getDatabase(context = context).getAccountDao()
     val accounts = db.getAll()
-
     for(account in accounts){
         if(account.type == "Cex") {
             val apiKey = account.key.split("@@")[0]
@@ -150,7 +148,6 @@ fun updateBinance(context: MainActivity){
                 total += token.amount * token.price!!
             }
             db.update(Account(account.uid, account.type, account.name, account.key, balance = total, Date().toString()))
-
         }
     }
 }

@@ -3,6 +3,7 @@ package com.liuqingyue.chainsight
 import android.content.Context
 import androidx.lifecycle.LiveData
 import androidx.room.*
+import java.time.LocalDate
 
 @Entity
 data class Account(
@@ -24,6 +25,31 @@ data class ManuallyAccount(
     @ColumnInfo(name = "price") val price: Double,
     @ColumnInfo(name = "change24h") val change24h: Double,
 )
+
+@Entity
+data class Performance(
+    @PrimaryKey val time: String,
+    @ColumnInfo(name = "total") val total: Double
+)
+
+@Dao
+interface PerformanceDao{
+    @Query("SELECT * FROM performance")
+    fun getAll(): List<Performance>
+
+    @Query("SELECT * FROM performance WHERE time = :time")
+    fun loadByTime(time: String): Performance
+
+    @Update
+    fun update(performance: Performance)
+
+    @Insert
+    fun insert(vararg performance: Performance)
+
+    @Delete
+    fun delete(performance: Performance)
+}
+
 
 @Dao
 interface ManuallyAccountDao {
@@ -66,6 +92,29 @@ interface AccountDao {
     @Delete
     fun delete(account: Account)
 }
+
+@Database(entities = [Performance::class], version = 1, exportSchema = false)
+abstract class AppDatabase3 : RoomDatabase() {
+    companion object{
+        @Volatile
+        private var INSTANCE: AppDatabase3? = null
+
+        fun getDatabase(context: Context): AppDatabase3 {
+            return INSTANCE ?: synchronized(this) {
+                val instance = Room.databaseBuilder(
+                    context.applicationContext,
+                    AppDatabase3::class.java,
+                    "performance_database"
+                ).allowMainThreadQueries().build()
+                INSTANCE = instance
+                instance
+            }
+        }
+
+    }
+    abstract fun getPerformanceDao(): PerformanceDao
+}
+
 
 @Database(entities = [Account::class], version = 1, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
