@@ -29,7 +29,7 @@ data class ManuallyAccount(
 @Entity
 data class Performance(
     @PrimaryKey val time: String,
-    @ColumnInfo(name = "total") val total: Double
+    @ColumnInfo(name = "total") val total: Float
 )
 
 @Dao

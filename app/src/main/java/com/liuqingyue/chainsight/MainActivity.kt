@@ -7,15 +7,9 @@ import android.util.Log
 import android.view.animation.AccelerateDecelerateInterpolator
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.Image
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.Card
-import androidx.compose.material.ExperimentalMaterialApi
-import androidx.compose.material.Icon
-import androidx.compose.material.Surface
+import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Clear
@@ -24,6 +18,7 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
@@ -35,10 +30,35 @@ import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.vectorResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.LiveData
 import coil.compose.rememberImagePainter
 import coil.transform.RoundedCornersTransformation
+import com.patrykandpatryk.vico.compose.axis.horizontal.bottomAxis
+import com.patrykandpatryk.vico.compose.chart.Chart
+import com.patrykandpatryk.vico.compose.chart.column.columnChart
+import com.patrykandpatryk.vico.compose.chart.line.lineChart
+import com.patrykandpatryk.vico.compose.component.shape.roundedCornerShape
+import com.patrykandpatryk.vico.compose.component.shape.textComponent
+import com.patrykandpatryk.vico.compose.component.shapeComponent
+import com.patrykandpatryk.vico.compose.dimensions.dimensionsOf
+import com.patrykandpatryk.vico.compose.style.ProvideChartStyle
+import com.patrykandpatryk.vico.compose.style.ChartStyle
+import com.patrykandpatryk.vico.core.axis.AxisPosition
+import com.patrykandpatryk.vico.core.axis.formatter.AxisValueFormatter
+import com.patrykandpatryk.vico.core.chart.column.ColumnChart
+import com.patrykandpatryk.vico.core.chart.decoration.ThresholdLine
+import com.patrykandpatryk.vico.core.component.shape.ShapeComponent
+import com.patrykandpatryk.vico.core.component.shape.Shapes
+import com.patrykandpatryk.vico.core.component.shape.cornered.Corner
+import com.patrykandpatryk.vico.core.component.shape.cornered.CorneredShape
+import com.patrykandpatryk.vico.core.component.shape.cornered.CutCornerTreatment
+import com.patrykandpatryk.vico.core.component.shape.cornered.RoundedCornerTreatment
+import com.patrykandpatryk.vico.core.entry.ChartEntry
+import com.patrykandpatryk.vico.core.entry.ChartEntryModelProducer
+import com.patrykandpatryk.vico.core.extension.copyColor
 import com.zj.refreshlayout.SwipeRefreshLayout
 import com.zj.refreshlayout.SwipeRefreshState
 import de.charlex.compose.BottomAppBarSpeedDialFloatingActionButton
@@ -55,6 +75,7 @@ import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
 
 /* Why I import material3 and material2 in the same file?
@@ -62,6 +83,17 @@ import java.time.LocalDate
  * And, other files in my project use material2. No material3 env polluted to other file
  */
 
+class Entry(
+    val localDate: LocalDate,
+    override val x: Float,
+    override val y: Float,
+) : ChartEntry{
+    override fun withY(y: Float) =  Entry (
+        localDate = this.localDate,
+        x = this.x,
+        y = y)
+}
+var performances = emptyList<Performance>()
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -76,10 +108,30 @@ class MainActivity : ComponentActivity() {
 
         // use a observer model to update the balance for view model when database changed
         val accountsLiveData = db.getObserverAll()
+        val dbPerformance = AppDatabase3.getDatabase(this@MainActivity).getPerformanceDao()
+        performances = dbPerformance.getAll()
+        Log.e("performance", performances.toString())
+        if(performances.size == 0) {
+            performances = listOf(Performance(LocalDate.now().toString(), 0.0f))
+        }
+        performances = performances.sortedBy { it.time }
+        val maxPerformance = performances.maxBy { it.total }
+        val minPerformance = performances.minBy { it.total }
+        var performanceList = mutableListOf<Pair<String,Float>>()
+        for (performance in performances){
+            performanceList.add( Pair(performance.time, performance.total.toFloat()))
+        }
 
+        val chartEntryModelProducer = performanceList.toList().mapIndexed { index, (dateString, y) ->
+            Entry(
+                localDate = LocalDate.parse(dateString),
+                x = index.toFloat(),
+                y = y,
+            )
+        }.let { entryCollection -> ChartEntryModelProducer(entryCollection) }
 
         setContent{
-            ShowPullAndRefresh(context = this@MainActivity, accountsLiveData = accountsLiveData)
+            ShowPullAndRefresh(context = this@MainActivity, accountsLiveData = accountsLiveData, chartEntryModelProducer = chartEntryModelProducer, maxPerformance = maxPerformance, minPerformance = minPerformance)
         }
 
         // To get eth price and eth change24h, it will be used in the BalanceEthActivity
@@ -100,6 +152,14 @@ class MainActivity : ComponentActivity() {
                 ) {
                     response.let { itResponse ->
                         itResponse.body()?.let { itData ->
+                            if(itData.data.size == 0){
+                                val sharedPreference = getSharedPreferences("ETH", Context.MODE_PRIVATE)
+                                val editor = sharedPreference.edit()
+                                editor.putString("price","1513")
+                                editor.putString("change24h","1.2")
+                                editor.commit()
+                                return;
+                            }
                             for (i in itData.data[0].tokenList) {
                                 if (i.valueUsd != "0") {
                                     // store the info into sharedPreference
@@ -135,14 +195,14 @@ fun updatePortfolio(res1: Unit, res2:Unit, res3: Unit, context: MainActivity){
     Log.d(LocalDate.now().toString(), totalBalance.toString())
     val dao = AppDatabase3.getDatabase(context = context).getPerformanceDao()
     if(dao.loadByTime(LocalDate.now().toString()) == null) {
-        dao.insert(Performance(LocalDate.now().toString(), totalBalance))
+        dao.insert(Performance(LocalDate.now().toString(), totalBalance.toFloat()))
     }else{
-        dao.update(Performance(LocalDate.now().toString(), totalBalance))
+        dao.update(Performance(LocalDate.now().toString(), totalBalance.toFloat()))
     }
 }
 
 @Composable
-fun ShowPullAndRefresh(context: MainActivity, accountsLiveData: LiveData<List<Account>>) {
+fun ShowPullAndRefresh(context: MainActivity, accountsLiveData: LiveData<List<Account>>, chartEntryModelProducer: ChartEntryModelProducer, maxPerformance: Performance, minPerformance: Performance) {
     var refreshing by remember { mutableStateOf(false) }
     var deleteView by remember { mutableStateOf(false) }
     LaunchedEffect(refreshing) {
@@ -162,7 +222,16 @@ fun ShowPullAndRefresh(context: MainActivity, accountsLiveData: LiveData<List<Ac
     }) {
         Column {
             ShowMainTopBar(title = "Board",onDeleteViewChange = { deleteView = it },deleteView = deleteView)
-            ShowPerformance()
+            ShowBalance(accountsLiveData)
+            Surface(modifier = Modifier
+                .fillMaxWidth()
+                .clickable {
+                    val intent = Intent(context, PerformanceActivity::class.java)
+                    context.startActivity(intent)
+                }
+                .padding(start = 10.dp, end = 10.dp, top = 5.dp, bottom = 10.dp)) {
+                ShowPerformance(chartEntryModelProducer,maxPerformance,minPerformance)
+            }
             ShowSurface(context = context, accountsLive = accountsLiveData,deleteView)
 
         }
@@ -170,10 +239,67 @@ fun ShowPullAndRefresh(context: MainActivity, accountsLiveData: LiveData<List<Ac
 }
 
 @Composable
-fun ShowPerformance(){
-
+fun ShowBalance(accountsLiveData: LiveData<List<Account>>){
+    val accounts = accountsLiveData.observeAsState(initial = emptyList())
+    var totalBalance = 0.0
+    for (i in accounts.value!!){
+        totalBalance += i.balance
+    }
+    Row(modifier = Modifier
+        .fillMaxWidth()
+        .padding(start = 18.dp, top = 0.dp, bottom = 0.dp)) {
+        Text(text = "$" + String.format("%.0f",totalBalance.toFloat()), fontSize = 40.sp, fontWeight = FontWeight.Bold)
+        Text(String.format("%.2f",totalBalance.toFloat()-totalBalance.toInt()).substring(1,4), fontSize = 40.sp, fontWeight = FontWeight.Bold, color = Color.Gray)
+    }
 }
 
+@Composable
+fun ShowPerformance(chartEntryModelProducer: ChartEntryModelProducer, maxPerformance: Performance, minPerformance: Performance) {
+    // create a List contain two colors
+    val colors = listOf(
+        Color(0xFF00BFA5),
+        Color(0xFF00BFA5)
+    )
+    val chartStyle = ChartStyle.fromColors(
+        Color.Black,
+        Color.White,
+        Color.LightGray,
+        colors,
+        Color.LightGray,
+    )
+    val labelComponent = textComponent(
+        color = MaterialTheme.colorScheme.surface,
+        padding = dimensionsOf(all = 4.dp),
+        margins = dimensionsOf(all = 4.dp),
+        background = ShapeComponent(
+            shape = Shapes.roundedCornerShape(4.dp),
+            color = 0xFF68A7AD.toInt(),
+            strokeWidthDp = 0f,
+        ),
+    )
+    val line= ThresholdLine(
+        thresholdRange = minPerformance.total .. maxPerformance.total,
+        labelComponent = labelComponent,
+        lineComponent = ShapeComponent(
+            color = 0xFF68A7AD.toInt()
+                .toInt()
+                .copyColor(alpha = 0.16f),
+        ),
+    )
+
+    ProvideChartStyle(chartStyle = chartStyle) {
+        Chart(
+            chart = columnChart(decorations = listOf(line)),
+            chartModelProducer = chartEntryModelProducer,
+            bottomAxis = bottomAxis(valueFormatter = rememberGroupedColumnChartAxisValueFormatter()),
+        )
+    }
+}
+
+@Composable
+internal fun rememberGroupedColumnChartAxisValueFormatter(): AxisValueFormatter<AxisPosition.Horizontal.Bottom> =
+    AxisValueFormatter { x, _ -> LocalDate.parse(performances[x.toInt()].time).format(
+        DateTimeFormatter.ofPattern("MM/dd")) }
 
 @Composable
 fun BallRefreshHeader(state: SwipeRefreshState) {

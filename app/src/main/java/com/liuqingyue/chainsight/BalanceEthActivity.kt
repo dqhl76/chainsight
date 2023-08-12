@@ -51,7 +51,7 @@ import java.util.*
 interface AddressApi {
 
     // get account's token amount
-    @Headers("Ok-Access-Key: b8c93ac9-b7b4-477b-97ad-e6dc72b44907")
+    @Headers("Ok-Access-Key: d5823534-a4df-408e-8a8c-443a1196987a")
     @GET("address-balance-fills")
     fun getAccount(
         @Query("chainShortName") chain: String,
@@ -60,7 +60,7 @@ interface AddressApi {
     ): Call<AddressBalanceData>
 
     // get a summary of an account, it contains the native coin number
-    @Headers("Ok-Access-Key: b8c93ac9-b7b4-477b-97ad-e6dc72b44907")
+    @Headers("Ok-Access-Key: d5823534-a4df-408e-8a8c-443a1196987a")
     @GET("address-summary")
     fun getEth(
         @Query("chainShortName") chain: String,

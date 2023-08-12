@@ -55,7 +55,6 @@ class AddTokenManually : ComponentActivity() {
                             }
                         }
                         ShowAddNewToken(this@AddTokenManually, account = account!!)
-
                     }
                 }
             }

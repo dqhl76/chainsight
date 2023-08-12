@@ -13,6 +13,7 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.time.Instant
 import java.util.*
+import kotlin.collections.LinkedHashMap
 
 fun updateEth(context: MainActivity){
     val db = AppDatabase.getDatabase(context = context).getAccountDao()
@@ -38,6 +39,7 @@ fun updateEth(context: MainActivity){
                            response: Response<AddressEthData>
                        ) {
                            response.let { itResponse ->
+                               Log.e("eth",itResponse.body().toString())
                                balance += ethPrice!!.toDouble() * (itResponse.body()?.data?.get(0)?.balance?.toDouble() ?: 0.0)
                                db.update(Account(account.uid, account.type, account.name, account.key, balance = balance, Date().toString()))
                                Log.e("update1",balance.toString())
@@ -91,7 +93,13 @@ fun updateBinance(context: MainActivity){
             )
             val parameters = LinkedHashMap<String, Any>()
             parameters["recvWindow"] = 5000
-            val result = client.createTrade().account(parameters)
+            var result = ""
+            try {
+                result = client.createTrade().account(parameters)
+            }catch (e:Exception){
+                Log.e("updateBinance",e.toString())
+                return
+            }
             val resultJson = Gson().fromJson(result, BinanceAccountData::class.java)
             var tokens = ArrayList<String>()
             for(token in resultJson.balances){

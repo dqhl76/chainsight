@@ -17,6 +17,15 @@
         android:theme="@style/Theme.Chainsight"
         tools:targetApi="31">
         <activity
+            android:name=".PerformanceActivity"
+            android:exported="false"
+            android:label="@string/title_activity_performance"
+            android:theme="@style/Theme.Chainsight">
+            <meta-data
+                android:name="android.app.lib_name"
+                android:value="" />
+        </activity>
+        <activity
             android:name=".AddTokenManually"
             android:exported="false"
             android:label="@string/title_activity_add_token_manually"

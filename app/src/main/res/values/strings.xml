@@ -7,4 +7,5 @@
     <string name="title_activity_add_manual">AddManualActivity</string>
     <string name="title_activity_balance_manually">BalanceManuallyActivity</string>
     <string name="title_activity_add_token_manually">AddTokenManually</string>
+    <string name="title_activity_performance">PerformanceActivity</string>
 </resources>
